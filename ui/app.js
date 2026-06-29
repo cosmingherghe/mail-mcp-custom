@@ -10,9 +10,11 @@ const trashButton = document.querySelector("#trashButton")
 const statusLine = document.querySelector("#status")
 const queryInput = document.querySelector("#queryInput")
 const maxResultsInput = document.querySelector("#maxResultsInput")
+const summaryProviderInput = document.querySelector("#summaryProviderInput")
 
 document.querySelector("#refreshButton").addEventListener("click", () => loadMessages())
 document.querySelector("#searchButton").addEventListener("click", () => loadMessages())
+document.querySelector("#todaySummaryButton").addEventListener("click", summarizeTodayEmails)
 document.querySelector("#sendForm").addEventListener("submit", sendEmailFromForm)
 trashButton.addEventListener("click", trashSelectedEmail)
 
@@ -81,6 +83,27 @@ async function trashSelectedEmail() {
   await loadMessages()
 }
 
+async function summarizeTodayEmails() {
+  setStatus("Summarizing today's emails with local AI...")
+  trashButton.disabled = true
+
+  const result = await api("/api/summaries/today", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      provider: summaryProviderInput.value,
+      maxResults: maxResultsInput.value || "10",
+    }),
+  })
+
+  state.messages = result.messages || []
+  state.selectedId = null
+  queryInput.value = result.query || ""
+  renderMessages()
+  renderSummary(result)
+  setStatus(`Summarized ${state.messages.length} email(s) received today.`)
+}
+
 function renderMessages() {
   messageCount.textContent = String(state.messages.length)
   messageList.innerHTML = ""
@@ -107,6 +130,19 @@ function renderEmptyReader() {
   trashButton.disabled = true
   readerContent.classList.add("empty")
   readerContent.textContent = "Select a message to read it."
+}
+
+function renderSummary(result) {
+  readerContent.classList.remove("empty")
+  readerContent.innerHTML = `
+    <div class="meta">
+      <strong>Today's Email Summary</strong>
+      <span>Provider: ${escapeHtml(result.provider || "local_llm")}</span>
+      <span>Query: ${escapeHtml(result.query || "")}</span>
+      <span>Messages: ${escapeHtml(String((result.messages || []).length))}</span>
+    </div>
+    <div class="summary-content">${escapeHtml(result.summary || "No summary returned.")}</div>
+  `
 }
 
 async function api(path, options) {

@@ -17,6 +17,7 @@
 - `src/providers/gmail/oauth.ts`: local Google OAuth browser flow.
 - `src/providers/gmail/token-store.ts`: local token persistence.
 - `src/providers/gmail/gmail.ts`: Gmail API client helpers.
+- `src/providers/llm/openai-compatible.ts`: OpenAI-compatible local LLM client for summaries.
 - `ui/index.html`: browser UI markup.
 - `ui/app.js`: browser UI behavior and calls to local `/api/*` routes.
 - `ui/styles.css`: browser UI styling.
@@ -31,6 +32,7 @@
 | Read message | `read_email` | `GET /api/emails/:id` |
 | Send message | `send_email` | `POST /api/send` |
 | Move to trash | Not exposed | `POST /api/emails/:id/trash` |
+| Summarize today's inbox | Not exposed | `POST /api/summaries/today` |
 
 ## Commands
 
@@ -43,7 +45,7 @@
 
 ## Environment
 
-Copy `.env.example` to `.env` and fill in Google OAuth values before running the server. The expected redirect URI is `http://127.0.0.1:4010/oauth/callback` unless changed in `.env`. Optional web UI settings are `WEB_HOST`, `WEB_PORT`, and `UI_PATH`.
+Copy `.env.example` to `.env` and fill in Google OAuth values before running the server. The expected redirect URI is `http://127.0.0.1:4010/oauth/callback` unless changed in `.env`. Optional web UI settings are `WEB_HOST`, `WEB_PORT`, and `UI_PATH`. Local AI summaries use `LOCAL_LLM_BASE_URL`, `LOCAL_LLM_API_KEY`, `LOCAL_LLM_MODEL`, `LOCAL_LLM_TIMEOUT_MS`, and `LOCAL_LLM_MAX_TOKENS`.
 
 ## Safety Rules
 
@@ -53,6 +55,7 @@ Copy `.env.example` to `.env` and fill in Google OAuth values before running the
 - When adding Gmail actions that modify mail, require the correct OAuth scope and update the docs.
 - Do not expose the web UI beyond localhost unless explicitly changing the project security model.
 - Keep MCP tool behavior and web API behavior documented when adding or removing capabilities.
+- Do not call LLM providers directly from browser JavaScript; keep LLM calls server-side in `src/web.ts` or provider modules.
 
 ## Documentation Maintenance
 

@@ -10,6 +10,7 @@ Custom mail MCP server for local use with `opencode`, without Composio. The curr
 - `src/providers/gmail/oauth.ts`: local Google OAuth browser flow
 - `src/providers/gmail/token-store.ts`: local OAuth token persistence
 - `src/providers/gmail/gmail.ts`: Gmail API client helpers
+- `src/providers/llm/openai-compatible.ts`: local OpenAI-compatible LLM client for email summaries
 - `ui/`: static browser UI served by `src/web.ts`
 - `doc/`: architecture notes and OpenCode configuration
 
@@ -34,6 +35,7 @@ When code changes affect behavior, setup, commands, environment variables, MCP t
   - `search_emails`
   - `send_email`
 - Optional local web UI for listing, searching, reading, sending, and moving messages to Gmail Trash
+- Local AI summary for emails received today through an OpenAI-compatible endpoint
 
 ## Capability Matrix
 
@@ -44,6 +46,7 @@ When code changes affect behavior, setup, commands, environment variables, MCP t
 | Read message | `read_email` | `GET /api/emails/:id` |
 | Send message | `send_email` | `POST /api/send` |
 | Move to trash | Not exposed | `POST /api/emails/:id/trash` |
+| Summarize today's inbox | Not exposed | `POST /api/summaries/today` |
 
 ## Google Cloud Setup
 
@@ -96,6 +99,22 @@ UI_PATH=./ui
 
 Trash actions move messages to Gmail Trash. They do not permanently delete mail.
 
+## Local AI Summaries
+
+The web UI can summarize emails received today with a local OpenAI-compatible LLM. The browser calls `src/web.ts`, and the server calls the configured local LLM endpoint.
+
+Default local LLM settings:
+
+```text
+LOCAL_LLM_BASE_URL=http://127.0.0.1:1234/v1
+LOCAL_LLM_API_KEY=local
+LOCAL_LLM_MODEL=qwen/qwen3.5-9b
+LOCAL_LLM_TIMEOUT_MS=180000
+LOCAL_LLM_MAX_TOKENS=4096
+```
+
+The summary flow searches Gmail for today's inbox messages, reads each message, truncates long bodies, sends the summary prompt to the local LLM, and filters the visible message list to the summarized messages.
+
 ## Initial Scopes
 
 - `gmail.readonly`
@@ -114,4 +133,5 @@ The OpenCode configuration for this project is documented separately in `doc/ope
 - Plain text email sending only
 - No attachments
 - Trash support only moves messages to Gmail Trash; permanent delete is not implemented
+- AI summaries currently support only the `local_llm` provider; OpenCode provider switching is planned but not wired yet
 - No custom refresh-token logic outside the Google client

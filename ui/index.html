@@ -24,6 +24,13 @@
           <input id="maxResultsInput" type="number" min="1" max="25" value="10" aria-label="Max results" />
           <button id="searchButton" type="button">Search</button>
         </div>
+        <div class="summary-row">
+          <label for="summaryProviderInput">Summary provider</label>
+          <select id="summaryProviderInput">
+            <option value="local_llm">Local AI</option>
+          </select>
+          <button id="todaySummaryButton" type="button">Summarize today's emails</button>
+        </div>
         <p class="hint">Trash actions only move messages to Gmail Trash. They are not permanent deletes.</p>
       </section>
 

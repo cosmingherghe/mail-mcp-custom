@@ -51,6 +51,25 @@ Project: `mail-mcp-custom`
                   | gmail.ts        |
                   | Gmail API       |
                   +------------------+
+
+Browser summary flow:
+
++------------------+     +-----------------------+     +------------------+
+| Browser UI       | --> | POST /api/summaries/  | --> | gmail.ts         |
+| Local AI button  |     | today in src/web.ts   |     | read today mail  |
++------------------+     +-----------+-----------+     +------------------+
+                                      |
+                                      v
+                            +-----------------------+
+                            | openai-compatible.ts  |
+                            | LOCAL_LLM_* config    |
+                            +-----------+-----------+
+                                        |
+                                        v
+                            +-----------------------+
+                            | Local LLM endpoint    |
+                            | 127.0.0.1:1234/v1    |
+                            +-----------------------+
 ```
 
 ## Summary
@@ -60,7 +79,7 @@ Project: `mail-mcp-custom`
 3. Both entry points authenticate one local Gmail user with Google OAuth.
 4. Tokens are stored locally in `data/gmail-token.json`.
 5. The MCP server exposes 4 tools: `list_emails`, `read_email`, `search_emails`, and `send_email`.
-6. The web UI exposes local-only API routes for listing, searching, reading, sending, and moving messages to Gmail Trash.
+6. The web UI exposes local-only API routes for listing, searching, reading, sending, moving messages to Gmail Trash, and summarizing today's inbox with a local LLM.
 
 ## Capability Matrix
 
@@ -71,3 +90,4 @@ Project: `mail-mcp-custom`
 | Read message | `read_email` | `GET /api/emails/:id` |
 | Send message | `send_email` | `POST /api/send` |
 | Move to trash | Not exposed | `POST /api/emails/:id/trash` |
+| Summarize today's inbox | Not exposed | `POST /api/summaries/today` |

@@ -3,6 +3,7 @@ import "dotenv/config"
 import express from "express"
 
 import { getConfig } from "./config.js"
+import { createChatCompletion } from "./providers/llm/openai-compatible.js"
 import { createGmailClient, listEmails, messageSummary, readEmail, sendEmail, trashEmail } from "./providers/gmail/gmail.js"
 import { authorize } from "./providers/gmail/oauth.js"
 
@@ -70,6 +71,49 @@ async function main() {
     }
   })
 
+  app.post("/api/summaries/today", async (request, response, next) => {
+    try {
+      const input = request.body as { provider?: unknown; maxResults?: unknown }
+      const provider = typeof input.provider === "string" ? input.provider : "local_llm"
+
+      if (provider !== "local_llm") {
+        response.status(400).json({ error: "Only local_llm summaries are supported right now" })
+        return
+      }
+
+      const maxResults = parseMaxResults(input.maxResults)
+      const query = todaysInboxQuery()
+      const messages = await listEmails(gmail, maxResults, query)
+      const summaries = await Promise.all(
+        messages.map(async (message) => {
+          const fullMessage = await readEmail(gmail, message.id ?? "")
+          return messageSummary(fullMessage)
+        }),
+      )
+
+      if (summaries.length === 0) {
+        response.json({ provider, query, messages: [], summary: "No inbox emails were found for today." })
+        return
+      }
+
+      const summary = await createChatCompletion(config.localLlm, [
+        {
+          role: "system",
+          content:
+            "You summarize email digests. Return only the final summary. Do not include reasoning or hidden analysis.",
+        },
+        {
+          role: "user",
+          content: buildTodaySummaryPrompt(summaries),
+        },
+      ])
+
+      response.json({ provider, query, messages: summaries, summary })
+    } catch (error) {
+      next(error)
+    }
+  })
+
   app.use((error: unknown, _request: express.Request, response: express.Response, _next: express.NextFunction) => {
     const message = error instanceof Error ? error.message : "Unexpected server error"
     response.status(500).json({ error: message })
@@ -81,12 +125,48 @@ async function main() {
 }
 
 function parseMaxResults(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) return Math.min(Math.max(Math.trunc(value), 1), 25)
   if (typeof value !== "string") return 10
 
   const parsed = Number.parseInt(value, 10)
   if (!Number.isFinite(parsed)) return 10
 
   return Math.min(Math.max(parsed, 1), 25)
+}
+
+function todaysInboxQuery() {
+  const today = new Date()
+  const tomorrow = new Date(today)
+  tomorrow.setDate(today.getDate() + 1)
+
+  return `in:inbox after:${formatGmailDate(today)} before:${formatGmailDate(tomorrow)}`
+}
+
+function formatGmailDate(date: Date) {
+  return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`
+}
+
+function buildTodaySummaryPrompt(messages: ReturnType<typeof messageSummary>[]) {
+  const emailBlocks = messages
+    .map((message, index) => {
+      const body = truncateText(message.body ?? message.snippet ?? "", 1800)
+
+      return [
+        `Email ${index + 1}`,
+        `From: ${message.from ?? "Unknown"}`,
+        `Subject: ${message.subject ?? "(no subject)"}`,
+        `Date: ${message.date ?? "Unknown"}`,
+        `Body: ${body || "No plain text body available."}`,
+      ].join("\n")
+    })
+    .join("\n\n---\n\n")
+
+  return `Summarize the emails received today. Include:\n- A concise overview\n- Important or urgent items\n- Action items\n- Notable senders and subjects\n\nEmails:\n\n${emailBlocks}`
+}
+
+function truncateText(value: string, maxLength: number) {
+  if (value.length <= maxLength) return value
+  return `${value.slice(0, maxLength)}... [truncated]`
 }
 
 main().catch((error) => {
