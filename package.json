@@ -4,6 +4,7 @@
   "description": "Custom mail MCP server with local Gmail OAuth flow",
   "scripts": {
     "dev": "tsx src/server.ts",
+    "web": "tsx src/web.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "check": "tsc --noEmit -p tsconfig.json"

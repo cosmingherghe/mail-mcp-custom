@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mail MCP UI</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Local Gmail tool</p>
+          <h1>Mail MCP UI</h1>
+          <p>List, search, read, send, and safely move Gmail messages to trash.</p>
+        </div>
+        <button id="refreshButton" type="button">Refresh</button>
+      </section>
+
+      <section class="panel search-panel" aria-label="Search mail">
+        <label for="queryInput">Gmail search query</label>
+        <div class="search-row">
+          <input id="queryInput" type="search" placeholder="from:example.com older_than:30d" />
+          <input id="maxResultsInput" type="number" min="1" max="25" value="10" aria-label="Max results" />
+          <button id="searchButton" type="button">Search</button>
+        </div>
+        <p class="hint">Trash actions only move messages to Gmail Trash. They are not permanent deletes.</p>
+      </section>
+
+      <section class="grid">
+        <section class="panel" aria-label="Messages">
+          <div class="section-title">
+            <h2>Messages</h2>
+            <span id="messageCount">0</span>
+          </div>
+          <div id="messageList" class="message-list"></div>
+        </section>
+
+        <section class="panel reader" aria-label="Selected message">
+          <div class="section-title">
+            <h2>Reader</h2>
+            <button id="trashButton" class="danger" type="button" disabled>Move to trash</button>
+          </div>
+          <article id="readerContent" class="reader-content empty">Select a message to read it.</article>
+        </section>
+      </section>
+
+      <section class="panel" aria-label="Send email">
+        <h2>Send Email</h2>
+        <form id="sendForm" class="send-form">
+          <input name="to" type="email" placeholder="To" required />
+          <input name="cc" type="email" placeholder="Cc optional" />
+          <input name="bcc" type="email" placeholder="Bcc optional" />
+          <input name="subject" type="text" placeholder="Subject" required />
+          <textarea name="body" rows="7" placeholder="Plain text body" required></textarea>
+          <button type="submit">Send</button>
+        </form>
+      </section>
+
+      <p id="status" class="status" role="status"></p>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

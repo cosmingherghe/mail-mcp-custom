@@ -54,6 +54,15 @@ export async function sendEmail(
   return response.data
 }
 
+export async function trashEmail(gmail: gmail_v1.Gmail, id: string) {
+  const response = await gmail.users.messages.trash({
+    userId: "me",
+    id,
+  })
+
+  return response.data
+}
+
 export function messageSummary(message: gmail_v1.Schema$Message) {
   const headers = new Map((message.payload?.headers ?? []).map((header) => [header.name ?? "", header.value ?? ""]))
   const plainText = extractPlainText(message.payload)
